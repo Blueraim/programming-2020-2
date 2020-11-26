@@ -1,0 +1,235 @@
+프로그래밍기초 2팀 11주차 회의록
+20173439 우상욱(팀장)
+20173453 최수창
+20173504 박찬우
+
+목표: OpenCVbot에 사용된 헤더파일 분석
+
+1. #include "opencv2/highgui/highgui.hpp“
+2. #include "opencv2/imgproc/imgproc.hpp“
+
+~ highgui ~
+
+imread(), namedWindow(), imshow() and waitKey() 함수는 위 헤더파일안에 정의 되었으므로, 포함시켜야 한다.
+위 프로그램에선 Mat 데이터 구조체를 사용하고 있고, “opencv2/core/core.hpp” 헤더 파일안에 정의되어 있으나, “opencv2/highgui/highgui.hpp”헤더파일안에 포함되어있으므로 여기선 중복 include할 필요가 없다.
+
+Mat hwnd2mat(HWND hwnd) / / Mat클래스
+Class MAT
+Mat클래스는 행렬(Matrix)를 뜻하며, OpenCV에서 가장 많이 사용하는 클래스이다.
+Mat클래스는 n차원의 고차원 행렬까지 표현할 수 있으며, 영상 처리 라이브러리 답게, 한 개 이상의 채널을 가질 수 있다.(영상이라는게 사진의 연속이고 사진이 곧 행렬이라 할 수 있다.)
+정수, 실수, 복소수 등으로 구성된 행렬과 벡터, 그리고 그레이스케일, 컬러 영상, 그리고 경우에 따라서 벡터 필드, 포인트 클라우드, 텐서, 히스토그램 등 정보를 저장하는 용도로도 사용된다.(본질적으론 행렬 관련 데이터 처리를 실행 가능하지만 주 기능은 영상 처리이다.)
+
+Mat( int rows , int cols , int type)
+Rows : 2D 배열의 행 수
+Cols : 2D 배열의 열 수
+Type  : CV_8UC1 등 사용해 1~4개의 채널 행렬을 생성하거나 다중 채널 행렬을 생성
+
+Mat(Size size, int type)
+Size : 2D 배열 크기 ( cols , rows) 순으로 입력
+Type : CV_8UC1 등 사용해 1~4개의 채널 행렬을 생성하거나 다중 채널 행렬을 생성
+
+Mat(int rows , int cols, int type, const Scalar&s)
+Rows : 2D 배열의 행수
+Cols : 2D 배열의 열 수
+Type : CV_8UC1 등 사용해 1~4개의 채널 행렬을 생성하거나 다중 채널 행렬을 생성
+S : 각 행렬 요소를 초기화하는데 사용할 선택적 값 생성 후 모든 행렬 요소를 특정 값으로 설정하려면 할당 연산자 Mat :: operator = (const Scalar & value)를 사용하십시오 
+
+class Mat
+{
+public:
+    Mat(); //mat 생성자
+1. 객체 생성
+    Mat(int rows, int cols, int type); //  세로 , 가로 순서로 입력
+    Mat(Size size, int type); // size클래스 내부에 값 지정시 가로,세로 순서로 입력
+
+// 2.객체 생성 – 쓰레기값 생성 방지
+    Mat(int rows, int cols, int type, const Scalar& s); 
+    Mat(Size size, int type, const Scalar& s);
+
+type에는 Mat 객체의 타입을 나타내는 매크로 상수를 전달 <- ex : CV_8UC1
+size클래스의 생성자는 보통 두개의 인자를 받음.
+1.처럼  Mat객체에 행렬의 크기와 타입을 지정하여 생성할 경우, Mat 행렬의 모든 원소는 흔히 쓰레기값이라고 부르는 임의의 값으로 채워짐
+
+2처럼 객체를 생성할 경우 모든 원소 값을 초기화 시킬 수 있음.
+S : 행렬 원소 초기값을 설정하는 인자
+Scalar 클래스는 4개의 실수값을 저장할 수 있는 OpenCV클래스
+주로 영상의 픽셀 값을 표현하는 용도로 사용
+Scalar클래스가 그레이스케일 영상의 픽셀 값을 표현할 경우 1개의 멤버 변수만 사용
+3채널 컬러 영상의 픽셀 값을 표현할 시에는 3개의 멤버 변수 사용
+
+    Mat(const Mat& m);
+    ~Mat();
+    
+비어 있는 Mat객체 or 이미 생성된 Mat객체에 새로운 행렬 할당 
+    void create(int rows, int cols, int type);
+
+
+    bool empty() const;
+    
+
+
+메모리 공간을 새로 할당하여 픽셀 데이터 전체를 복사(깊은복사)
+    Mat clone() const;
+    void copyTo(OutputArray m) const;
+
+
+
+    Mat& setTo(InputArray value, InputArray mask=noArray());
+    
+
+
+
+모든 원소가 0으로 초기화된 행렬 생성
+    static MatExpr zeros(int rows, int cols, int type);
+
+행렬의 모든 원소가 1로 초기화된 행렬 생성
+    static MatExpr ones(int rows, int cols, int type);
+    
+
+
+
+    Mat& operator = (const Mat& m);
+
+
+
+
+Mat 클래스에 정의된 괄호 연산자 재정의
+    Mat operator()(const Rect& roi) const;
+    
+
+
+Mat::ptr()함수
+    template<typename _Tp> _Tp* ptr(int i0 = 0);
+_Tp* 타입으로 형변환된 y번째 행의 시작주소를 반환
+지정한 자료형의 포인터를 반환. 이포인터로 지정한 행의 원소에 접근 가능
+행단위로 행렬원소에 접근
+
+
+
+Mat::at()함수
+    template<typename _Tp> _Tp& at(int row, int col);
+가장 직관적 행렬 원소 접근 방법    
+행과 열 2개의 정수를 인자로 받음
+해당 위치의 행렬 원소값을  참조 형식으로 반환
+
+
+
+Mat 클래스의 멤버 변수
+    int dims; //Mat 행렬의 차원
+    int rows, cols; //2차원 행렬의 크기. 3차원 이상일시 -1
+    uchar* data; //행렬의 원소 데이터가 저장된 메모리 공간. 비어있을시 0
+    MatSize size;//3차원 이상일시 행렬의 크기 정보
+    ...
+}
+(Mat 클래스의 깊이)
+Mat 클래스는 다양한 자료형을 멤버변수로 사용할 수 있다.
+Mat 클래스에서 행렬이 어떤 자료형을 사용하는지에 대한 정보를 깊이(depth)라고 한다.
+Opencv에서 Mat행렬의 깊이를 나타내는 매크로 상수가 있다.
+CV_<bit-깊이>{U|S|F} 이와 같은 형식으로 구성되어있다. U는 unsigned, S는 signed F는 실수형을 뜻함.
+정의
+#defined CV_8U 0   //uchar, unsigned char
+#defined CV_8S 1   //schar, signed char
+#defined CV_16U 2 //ushort, unsigned short
+#defined CV_16S 3 // signed short
+#defined CV_32S 4 // int
+#defined CV_32F 5 // float
+#defined CV_64F 6 // double
+#defined CV_16F 7 // float16_t
+
+(채널)
+영상에서 채널이란, 예로 그레이스케일과 RGB컬러가 있다.
+하나의 장면일지라도 영상의 색을 나타내는 방식이 그레이 스케일의 경우에는 흑과 백, 그리고 그사이의 그라데이션으로 나뉘어지는 1차원정보로, 이를 1채널이라고 부른다.
+RGB컬러의 경우에는 Red, Green ,Blue에 대한 각각의 차원을 가지는 3차원으로 빛의 삼원색에 따라서 어두운 검은색에서 시작해서 Red에 가까운지, 어두운 검은색에서 시작해서 Green에 가까운지에 대해서 3차원적인 조합으로 이루어진 3채널을 뜻한다.
+OpenCV행렬의 타입, Mat클래스는 즉 영상 자체라고 말할수도 있는데 그래서
+CV_<bit-깊이>{U|S|F}C(<number_of_channels>) 같은 형식의 매크로 상수로 표현이 가능하다.
+깊이 상수에서 C(<채널 개수>)를 붙인 것인데, 예로 CV_8UC1의 경우는, 채널이 1개(그레이스케일)인, 8비트 unsigned char 를 말하는 것이다.
+
+(Mat타입)
+위의 깊이와 채널의 개념을 합쳐서, 하나의 mat타입이 된다.
+OpenCv에서 새로운 mat객체를 생성할 때에는 행렬의 타입 정보를 명시적으로 지정해야 한다.
+위의 클래스 코드의 생성자에 보이는 int type이 그것이며, 이 상수를 사용하여 타입을 지정해야 한다.
+(ex : Mat img2(480, 640, CV_8UC3); //이것의 경우는, 가장 자주 쓰이는 컬러 이미지를 나타냅니다.)
+
+Window.h 부분
+HWND = Handle Windows의 약자로 윈도우의 핸들 번호를 저장해서 사용한다. 하나의 프로그램에서 많은 양의 윈도우를 띄울수 있다. 즉 윈도우창의 번호들(HWND)로 구분하는 것.
+HDC : Handle Device Context 
+Device Context : 출력에 필요한 정보를 가지는 데이터 구조체. 좌표, 색 , 굵기 등 출력에 필요한 모든 정보를 담고 있다.
+HDC : 윈도우의 출력에 관한 많은 정보를 보관하고 있는 구조체, 기본제공 도형, 선 , 이미지 출력, 폰트까지 대부분의 윈도우 환경의 출력정보를 관리하는 역할.
+
+
+Main() 부분
+HWND hwndDesktop = GetDesktopWindow();
+GetDesktopWindow : 바탕화면의 핸들을 얻기 위한 함수
+
+~ imgproc ~
+cv::rectangle
+
+void cv::rectangle   (InputOutputArray    img,
+      Point    pt1,
+      Point    pt2,
+      const Scalar &    color,
+      int    thickness = 1,
+      int    lineType = LINE_8,
+      int    shift = 0 
+      )      
+
+사각형을 그린다. 단순한 사격형, 두꺼운 사각형, 혹은 안이 채워진 사각형을 그린다.
+pt1과 pt2를 기준으로 사각형을 그린다.
+
+매개 변수
+img   이미지.
+pt1   직사각형의 꼭지점.
+pt2   pt1 반대쪽 직사각형의 꼭지점입니다.
+color   직사각형 색상 또는 밝기 (greyscale image).
+thickness   직사각형을 구성하는 선의 두께입니다. FILLED 와 같은 음수 값은 함수가 채워진 사각형을 그려야 함을 의미합니다.
+lineType   라인 유형. LineTypes 참조(별도로 문서 작성)
+shift       점 좌표의 소수 비트 수입니다.
+----------------------------------------------------------------------
+cv :: medianBlur
+
+void cv::medianBlur(InputArray src,
+      OutputArray dst,
+      int ksize 
+      )
+median filter를 이용하여 이미지를 부드럽게한다. ksize * ksize조리개 사용. 다중 채널 이미지의 각 채널은 독립적으로 처리됨.
+미디안 필터는 내부에서 BORDER_REPLICATE를 사용하여 테두리 픽셀 처리함.
+
+매개 변수
+src   입력 1, 3 또는 4 채널 이미지; ksize가 3 또는 5 인 경우 이미지 깊이는 CV_8U, CV_16U 또는 CV_32F 여야하며 더 큰 조리개 크기의 경우 CV_8U 만 될 수 있습니다.
+dst   src와 크기 및 유형이 동일한 대상 배열.
+ksize   조리개 선형 크기; 홀수이고 1보다 커야합니다. 예 : 3, 5, 7 ...
+------------------------------------------------------------   
+cv :: cvtColor
+
+void cv::cvtColor(InputArray    src,
+      OutputArray dst,
+      int code,
+      int dstCn = 0 
+      )
+
+한 색상 공간(RGB 에서 R,G,B, 각자의 색 채널을 말함)에서 다른 색상 공간을 이미지를 변환합니다.
+RGB에서 변환하는 경우 색상 채널의 순서를 명시해야합니다. OPENCV에서의 색상 형식 순서는 RGB라고 하지만, 실제는 BGR입니다.(바이트 반전)
+이에 따라 표준(24비트)컬러 이미지의 첫 번째 바이트는 8비트 blue, 두번째는 green, 세번째는 red 입니다.
+
+R, G 및 B 채널 값의 일반적인 범위는 다음과 같습니다.
+CV_8U 이미지의 경우 0 ~ 255
+CV_16U 이미지의 경우 0 ~ 65535
+CV_32F 이미지의 경우 0 ~ 1
+
+선형 변환 (linear transformations)의 경우 범위는 중요하지 않습니다. 그러나 비선형 변환의 경우 올바른 결과를 얻으려면
+입력 RGB 이미지를 적절한 값 범위로 일반화(normalized)해야합니다
+(예 : RGB)→L * u * v * 변환. 예를 들어, 크기 조정없이 8 비트 이미지에서 직접 변환 된 32 비트 부동 소수점 이미지가있는 경우
+함수에서 가정하는 0..1 대신 0..255 값 범위를 갖게됩니다. 따라서 cvtColor 를 호출하기 전에 먼저 이미지를 축소해야합니다.
+
+매개 변수
+src   입력 이미지 : 8-bit unsigned, 8-bit unsigned (CV_16UC ...) 또는single-precision floating-point.
+dst   src와 같은 크기와 깊이의 출력 이미지.
+code   색 공간 변환 코드 ( ColorConversionCodes 참조 ).
+dstCn   대상 이미지의 채널 수; 매개 변수가 0이면 채널 수는 src 및 코드에서 자동으로 파생됩니다.
+-----------------------------------------------------------
+LineTypes 에 관하여.
+cv::rectangle에서 사각형을 그릴 때 라인의 종류를 결정하는 linetype의 경우, 
+FILLED를 사용하면 안이 채워진 사각형이 되고, LINE_AA를 사용하면 안티앨리어싱(부드러워진) 선을 사용한 사각형이 된다.
+그 외에 4-connected와 8-connected 두 가지가 있는데, 4-connected와 8-connected 두 개의 차이는 픽셀 좌표를 구하고, 그 픽셀 좌표를 중심으로 선을 그릴 때
+픽셀 좌표 주위로 얼마나 추가 픽셀을 차지하느냐가 4-connected와 8-connected의 차이이다. 4-connected의 경우 픽셀 좌표를 중심으로 상하좌우의 4개의 픽셀을 차지하여 그리지만,
+8-connected의 경우 상하좌우의 4개 픽셀뿐만 아니라 모서리까지 모두 합쳐 8개의 픽셀을 차지하여 선을 그린다.
