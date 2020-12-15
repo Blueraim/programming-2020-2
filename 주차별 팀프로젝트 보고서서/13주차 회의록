@@ -1,0 +1,196 @@
+※ 프로그래밍기초 2팀 13주차 회의록
+20173439 우상욱(팀장)
+20173453 최수창
+20173504 박찬우
+
+// 하나의HWND (윈도우데스크탑) 객체를OpenCV MAT로변환
+Mat hwnd2mat(HWND hwnd)//capture frame  모니터화면을캡처하는방법 비트맵을mat로전환mat자료형의함수hwnd2mat
+{//cv::Mat hwnd2mat mat클래스의hwnd2mat 함수를선언정의하는것
+
+opencv로 모니터 화면을 캡처하는 방법에는 2가지가있는데
+hwnd2Mat 라는 클래스를 선언 정의하는 방법과
+https://github.com/sturkmen72/opencv_samples/blob/master/Screen-Capturing.cpp
+
+mat클래스의 hwnd2mat함수를 선언 정의하는 방법이있다.
+bot코드에서는 2번의 방법을 활용했음.
+https://stackoverflow.com/questions/14148758/how-to-capture-the-desktop-in-opencv-ie-turn-a-bitmap-into-a-mat
+
+
+HDC hwindowDC, hwindowCompatibleDC; // dc에대한핸들data type
+
+HBITMAP hbwindow; // 비트맵에대한핸들data type
+
+Mat src, img;
+BITMAPINFOHEADER  bi; // 구조체 독립적인비트맵의크기와컬러에관한정보를저장한다.
+
+typedef struct tagBITMAPINFOHEADER {
+    DWORD biSize;    BITMAPINFOHEADER구조체를 저장하기 위해 필요한 바이트수 
+			이 구조체의 크기를 나타냄 일반적으로 40이고 40이아니면 확장형
+    LONG biWidth;	비트맵의 가로크기를 픽세단위로 나타냄
+    LONG biHeight;	비트맵의 세로크기를 픽셀 단위로 나타냄 양수이면 픽셀 데이터는 상하가 뒤집힌상태(buttom - up)으로 저장되며, 음수이면 정상적인 상태(top - down)으로 저장됨. 일반적으로 biHeight는 양수로 저장되며, 픽셀 데이터는 상하가 뒤집힌 상태로 저장된다.
+
+    WORD biPlanes;	비트맵을 화면 등 보여 줄 때 필요한 플레인 수를 나타냄 항상 1.
+    WORD biBitCount;	픽셀 하나를 표현하기 위해 필요한 비트수를 나타냄. 1,4,8,16,24,32의 값을 가질 수있음. 8이면 256 32면 2의 32승 계산. 컬러를 표현할수있음
+
+    DWORD biCompression; 	압축 유형을 나타냄. 일반적으로는 BMP파일은 압축을 하				지않음을 나타내는 BI_RGB 값을 가짐
+    DWORD biSizeImage;	픽셀 데이터를 저장하는데 필요한 메모리 공간의 크기를 				나타냄. biCompression이 BI_RGB인 경우, 이 값은 0의 				값을 가질 수도 있다.
+    LONG biXPelsPerMeter; 	가로방향으로 미터당 픽셀수를 나타냄
+    LONG biYPelsPerMeter; 세로 방향으로 미터당 픽셀 수를 나타냄
+    DWORD biClrUsed;	색상 테이블에서 실제 사용되는 색상 수를 나타냄. 일반적으로 0
+    DWORD biClrImportant; 비트맵을 화면에 표시하기 위해 필요한 색상 인덱스 수를 나타냄 0이면 모든 색상이 필요함을 나타내며 일반적으로 0.
+} BITMAPINFOHEADER, FAR *LPBITMAPINFOHEADER, *PBITMAPINFOHEADER;
+
+hwindowDC = GetDC(NULL); // getdc : 화면전체또는특정window에그림을그리기위해사용할DC를만드는함수
+//NULL을명시하면 화면전체에 그릴 수 있는 DC의핸들값을얻게됨 성공하면 핸들값반환= hdc 실패하면NULL반환
+
+hwindowCompatibleDC = CreateCompatibleDC(hwindowDC); // 이미지를임시로저장하려면현재창 DC와호환되는DC를생성
+
+CreateCompatibleDC 함수는 어떤 DC와 호환 되는 DC를 만드는 방식 그래서 기준이 되는 DC의 핸들값을 매개변수로 전달받음. hdc와 호환이 된다라는 것은 hdc가 사용하는 출력장치의 종류나 출력장치가 사용 중인 그래픽 드라이버 정보를 가지고 새로운 dc를 만든다는 뜻
+
+SetStretchBltMode(hwindowCompatibleDC, COLORONCOLOR); DC에 이미지를 표시할 때 그중 확대나 축소가 필요한 경우 StretcBlt()함수를 사용하는데 깨짐 현상이 일어남.
+이것을 방지하기위해 SetStretchBltMode를 사용
+#원형#
+SetStretchBltMode(hdc, iMode);
+iMode 값
+* BLACKONWHITE : 논리 AND연산 수행/흰색배경에 검정색으로 되어있는 흑백 비트맵에 적당.
+* WHITEONBLACK : 논리 OR연산 수행/흰색 배경에 검정색으로 되어있는 흑백 비트맵에 적당.
+* COLORONCOLOR : 논리연산 하지 않음/컬러 비트맵에서 가장 좋은 접근 방법
+* HALFTONE : 반색조 형태.
+
+src.create(height, width, CV_8UC4); // 부호없는int 8비트4채널4개의색상채널과0에서255범위의값을가진matrix를만드는 것  height : 높이 width : 넓이
+
+//비트맵을사용하여이미지를 캡처 할 수 있다 또 캡처한이미지를 메모리에 저장하거나 응용프로그램창이나다른창의위치에표시할수있음
+hbwindow = CreateCompatibleBitmap(hwindowDC, width, height); // 적절한차원의비트맵을만듬
+
+
+
+@ BITMAPINFOHEADER @ 정의
+bi.biSize = sizeof(BITMAPINFOHEADER);
+bi.biWidth = width; // 비트맵의폭
+bi.biHeight = -height;  //비트맵의높이this is the line that makes it draw upside down or not 거꾸로그리는선
+bi.biPlanes = 1; //16색상을사용하는비트맵에서는4개의플랜이지만16색상이아니면1로명시
+bi.biBitCount = 32; // 색상을표현하는데필요한비트수32비트
+bi.biCompression = BI_RGB
+bi.biSizeImage = 0;
+bi.biXPelsPerMeter = 0;
+bi.biYPelsPerMeter = 0;
+bi.biClrUsed = 0;
+bi.biClrImportant = 0;
+
+// 보완이 필요한부분 //
+이전에 만든 DC를 비트맵과 함께 사용
+
+SelectObject(hwindowCompatibleDC, hbwindow); // 비트 패턴을 저장
+
+SelectObject 함수는 DC에 저장된 GDI object의 핸들값을 변경할 때 사용
+
+원형
+HGDIOBJ SelectObject( HDC hdc,HGDIOBJ hgdiobj);
+/////////////////////////////////////////////////
+
+
+
+
+https://m.blog.naver.com/PostView.nhn?blogId=tipsware&logNo=220988055352&proxyReferer=https:%2F%2Fwww.google.com%2F // SelectObject 
+https://counts.tistory.com/6 // SetStretchBltMode
+https://m.blog.naver.com/PostView.nhn?blogId=tipsware&logNo=220995733415&proxyReferer=https:%2F%2Fwww.google.com%2F // CreateCompatibleDC
+https://blog.naver.com/tipsware/220984197835 // 비트맵 
+https://vallista.tistory.com/entry/3-Windows-API-DC%EB%9E%80-%EB%AC%B4%EC%97%87%EC%9D%B8%EA%B0%80  // DC
+	HWND hwndDesktop = GetDesktopWindow();  // 데스크탑 윈도우 핸들을 받아온다.
+	Mat img2 = hwnd2mat(hwndDesktop);
+
+	uchar lastColor = 247;
+	bool press = false, fast = false, bird = false;
+
+	Mat gray1, gray2;
+	Mat absOut, trOut, blurOut, noGrass, finalIMG, screen;
+	Mat kernel(20, 20, CV_8U);
+	Mat blackStrip(60, 550, CV_8U, Scalar(0, 0, 0));
+
+	int value1 = 110;
+	int value2 = 90;
+	//createTrackbar("y", "original",&value1, 255);
+	//createTrackbar("x", "original", &value2, 255);
+
+	namedWindow("original", WINDOW_AUTOSIZE); // 창을 만듭니다.
+	namedWindow("final", WINDOW_AUTOSIZE);
+	namedWindow("finalimg", WINDOW_AUTOSIZE);
+	namedWindow("test", WINDOW_AUTOSIZE);
+
+※ GetDesktopWindow()
+데스크탑 윈도우 핸들을 받아옵니다. 데스크탑 창은 전체 화면을 덮습니다. 바탕 화면 창은 다른 창 위에 그려지는 영역입니다.
+
+리턴 타입: HWND
+
+구조: HWND GetDesktopWindow()
+
+헤더: winuser.h (include Windows.h)
+
+라이브러리: User32.lib
+
+---------------------------------------------------------------------------------
+
+※ Mat kernel(20, 20, CV_8U);
+(kernel_size, kernel_size, CV_8U) / (unsigned int)(kernel_size*kernel_size);
+normalized box filter의 커널 만들기.
+CV_8U : 8-bit unsigned integer: uchar ( 0..255 )
+CV_8U는 부호없는 8 비트 / 픽셀입니다. 즉, 픽셀은 0-255 값을 가질 수 있습니다. 이것은 대부분의 이미지 및 비디오 형식에 대한 일반 범위입니다.
+
+---------------------------------------------------------------------------------
+
+※ Mat blackStrip(60, 550, CV_8U, Scalar(0, 0, 0));
+Scalar(0, 0, 0) : Scalar는 기본적으로 파랑, 초록, 빨강 ,투명도 4개의 값을 갖게 된다.
+RGB값이 0
+
+---------------------------------------------------------------------------------
+
+※ namedWindow()
+창을 만듭니다.
+
+namedWindow 함수는 이미지와 트랙 바의 자리 표시 자로 사용할 수있는 창을 만듭니다. 생성 된 창은 이름으로 참조됩니다.
+
+같은 이름의 창이 이미 존재하는 경우 함수는 아무 작업도 수행하지 않습니다.
+
+cv :: destroyWindow 또는 cv :: destroyAllWindows를 호출하여 창을 닫고 관련 메모리 사용량을 할당 해제 할 수 있습니다. 간단한 프로그램의 경우 종료시 운영 체제에 의해 응용 프로그램의 모든 리소스와 창이 자동으로 닫히기 때문에 이러한 함수를 실제로 호출 할 필요가 없습니다.
+
+리턴 타입: void
+
+구조:
+void cv::namedWindow	(const String & 	winname, int flags = WINDOW_AUTOSIZE)	
+
+헤더: #include <opencv2/highgui.hpp>
+
+flags: WINDOW_AUTOSIZE - 표시된 이미지에 맞게 창 크기를 자동으로 조정하며 (imshow 참조) 창 크기를 수동으로 변경할 수 없습니다.
+void pressUpper() {
+	INPUT upper = { 0 };
+	upper.type = INPUT_KEYBOARD; // 이벤트는 키보드 이벤트를 사용
+	upper.ki.wVk = VK_UP; // UP ARROW key
+	SendInput(1, &upper, sizeof(INPUT)); // Send KeyDown
+	upper.ki.dwFlags = KEYEVENTF_KEYUP; // 지정된 경우 키가 해제됩니다. 지정하지 않으면 키가 눌러집니다.
+	SendInput(1, &upper, sizeof(INPUT)); // Send KeyUp
+}
+
+void pressDown() {
+	INPUT upper = { 0 };
+	upper.type = INPUT_KEYBOARD; 
+	upper.ki.wVk = VK_DOWN; // DOWN ARROW key
+	SendInput(1, &upper, sizeof(INPUT)); // Send KeyDown	
+}
+
+void relasseDown() {
+	INPUT upper = { 0 };
+	upper.type = INPUT_KEYBOARD;
+	upper.ki.wVk = VK_DOWN;
+	upper.ki.dwFlags = KEYEVENTF_KEYUP;
+	SendInput(1, &upper, sizeof(INPUT)); // Send KeyUp
+}
+typedef struct tagINPUT {
+  DWORD type;
+  union {
+    MOUSEINPUT    mi;
+    KEYBDINPUT    ki;
+    HARDWAREINPUT hi;
+  } DUMMYUNIONNAME;
+} INPUT, *PINPUT, *LPINPUT;
+
+헤더 : winuser.h (include Windows.h)
